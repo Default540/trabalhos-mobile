@@ -1,35 +1,42 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
+import { withLayoutContext } from 'expo-router';
+import { createMaterialTopTabNavigator, MaterialTopTabNavigationOptions, MaterialTopTabNavigationEventMap } from '@react-navigation/material-top-tabs';
+import { TabNavigationState, ParamListBase } from '@react-navigation/native';
 
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+const { Navigator } = createMaterialTopTabNavigator();
+
+const MaterialTopTabs = withLayoutContext<
+    MaterialTopTabNavigationOptions,
+    typeof Navigator,
+    TabNavigationState<ParamListBase>,
+    MaterialTopTabNavigationEventMap
+>(Navigator);
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
-  return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
-        }}
-      />
-    </Tabs>
-  );
-}
+    return (
+        <MaterialTopTabs
+            tabBarPosition="bottom"
+            screenOptions={{
+                tabBarStyle: {
+                    backgroundColor: '#202225',
+                    elevation: 0,
+                    shadowOpacity: 0,
+                    borderTopWidth: 1,
+                    borderTopColor: '#202225',
+                },
+                tabBarIndicatorStyle: {
+                    backgroundColor: '#5865F2',
+                    height: 2,
+                },
+                tabBarShowIcon: true,
+                swipeEnabled: true,
+            }}
+        >
+            <MaterialTopTabs.Screen
+                name="index"
+                options={{
+                    title: 'Servidores',
+                }}
+            />
+        </MaterialTopTabs>
+    );
+} 

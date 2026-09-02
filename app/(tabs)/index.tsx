@@ -1,98 +1,148 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
+import React, { useRef, useState } from 'react';
+import {
+    Animated,
+    PanResponder,
+    StyleSheet,
+    View,
+} from 'react-native';
+import { MOCK_SERVERS } from '../../src/mock/discordData';
+import SideBar from '@/src/components/SideBar';
+import ChannelList from '@/src/components/ChannelList';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+const SWIPE_THRESHOLD = -80;
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    const router = useRouter();
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
+    const [selectedServerId, setSelectedServerId] = useState<string>(MOCK_SERVERS[0].id);
+    const [selectedChannelId, setSelectedChannelId] = useState<string | null>(MOCK_SERVERS[0].channels[0].id);
+
+    const selectedServer = MOCK_SERVERS.find((s) => s.id === selectedServerId) || MOCK_SERVERS[0];
+    const selectedChannel = selectedServer.channels.find((c: { id: string }) => c.id === selectedChannelId);
+
+    const translateX = useRef(new Animated.Value(0)).current;
+
+    const panResponder = useRef(
+        PanResponder.create({
+            onMoveShouldSetPanResponder: (_, gesture) => {
+                return !!selectedChannelId && Math.abs(gesture.dx) > Math.abs(gesture.dy) && Math.abs(gesture.dx) > 10;
+            },
+            onPanResponderMove: (_, gesture) => {
+
+                if (gesture.dx < 0) {
+                    translateX.setValue(gesture.dx);
+                }
+            },
+            onPanResponderRelease: (_, gesture) => {
+
+                if (gesture.dx < SWIPE_THRESHOLD && selectedChannel) {
+                    router.push({
+                        pathname: '/channel/[id]',
+                        params: {
+                            id: selectedChannel.id,
+                            name: selectedChannel.name,
+                        },
+                    });
+                }
+
+                Animated.spring(translateX, {
+                    toValue: 0,
+                    useNativeDriver: true,
+                }).start();
+            },
+        })
+    ).current;
+
+    return (
+        <View style={styles.container}>
+
+            <SideBar
+                selectedServerId={selectedServerId}
+                onSelectServer={(id) => {
+                    setSelectedServerId(id);
+                    setSelectedChannelId(null);
+                }}
+            />
+
+            <ChannelList
+                selectedServer={selectedServer}
+                selectedChannelId={selectedChannelId}
+                setSelectedChannelId={setSelectedChannelId}
+                translateX={translateX}
+                panHandlers={panResponder.panHandlers}
+            />
+        </View>
+    );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+    container: {
+        flex: 1,
+        flexDirection: 'row',
+        backgroundColor: '#202225',
+        paddingTop: 40
+    },
+    serverSidebar: {
+        width: 72,
+        backgroundColor: '#202225',
+        alignItems: 'center',
+        paddingTop: 12,
+    },
+    serverIconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        marginBottom: 12,
+        overflow: 'hidden',
+    },
+    activeServer: {
+        borderRadius: 16,
+        borderWidth: 2,
+        borderColor: '#5865F2',
+    },
+    serverIcon: {
+        width: '100%',
+        height: '100%',
+    },
+    addServerButton: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: '#36393F',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 8,
+    },
+    addServerText: {
+        color: '#57F287',
+        fontSize: 24,
+        fontWeight: 'bold',
+    },
+    channelContainer: {
+        flex: 1,
+        backgroundColor: '#2F3136',
+        padding: 12,
+    },
+    serverTitle: {
+        color: '#FFFFFF',
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#202225',
+        paddingBottom: 12,
+    },
+    sectionHeader: {
+        color: '#8E9297',
+        fontSize: 12,
+        fontWeight: 'bold',
+        marginBottom: 8,
+    },
+    swipeHint: {
+        color: '#8E9297',
+        fontSize: 12,
+        textAlign: 'center',
+        marginTop: 12,
+    },
 });
