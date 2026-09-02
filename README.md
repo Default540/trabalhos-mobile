@@ -1,50 +1,87 @@
-# Welcome to your Expo app 👋
+# Trabalho Prático I — Reprodução de Interface Mobile (Discord)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Reimplementação de três telas do aplicativo **Discord** utilizando React Native, Expo e TypeScript.
 
-## Get started
+## 1. Aplicativo de referência
 
-1. Install dependencies
+**Discord** — plataforma de comunicação em servidores organizados por canais de texto e voz.
 
-   ```bash
-   npm install
-   ```
+## 2. Telas implementadas
 
-2. Start the app
+| # | Tela | Arquivo | Descrição |
+| --- | ------ | --------- | ----------- |
+| 1 | **Servidores e Canais** | `app/(tabs)/index.tsx` | Tela inicial. Mostra a barra lateral com os servidores do usuário (`SideBar` + `Server`) e, ao selecionar um servidor, a lista de canais de texto/voz daquele servidor (`ChannelList` + `Channel`). Permite deslizar (swipe) para abrir o canal selecionado. |
+| 2 | **Chat do Canal** | `app/(tabs)/channel/[id].tsx` | Exibe as mensagens mockadas do canal selecionado em uma `FlatList`, com cabeçalho mostrando o nome do canal (recebido via parâmetro de rota) e um campo para enviar novas mensagens (adicionadas ao estado local). |
+| 3 | **Criar Servidor** | `app/server/create-server.tsx` | Formulário (modal) para criar um novo servidor, com campos controlados por estado e ação de conclusão com feedback visual. |
 
-   ```bash
-   npx expo start
-   ```
+### Fluxo de navegação
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+Servidores e Canais → (tocar em um canal) → Chat do Canal
+Servidores e Canais → (tocar em "+") → Criar Servidor
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 3. Instruções de execução
 
-## Learn more
+Pré-requisitos: Node.js instalado.
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+# instalar dependências
+npm install
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+# iniciar o projeto
+npx expo start
+```
 
-## Join the community
+No terminal, escolha abrir no **Android/iOS/Expo Go** (escaneando o QR Code) ou pressione `w` para abrir no navegador.
 
-Join our community of developers creating universal apps.
+O aplicativo funciona **sem conexão com a internet** — todos os dados (servidores, canais e mensagens) são mockados localmente. Apenas os ícones/avatares (imagens remotas) podem não carregar em modo avião; a interface e a navegação continuam funcionando normalmente.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## 4. Screenshots
+
+> Adicionar aqui os prints das três telas antes da entrega, por exemplo:
+>
+> ![Servidores e Canais](./screenshots/tela-servidores.png)
+> ![Chat do Canal](./screenshots/tela-chat.png)
+> ![Criar Servidor](./screenshots/tela-criar-servidor.png)
+
+## 5. Funcionalidades implementadas
+
+- Listagem de servidores na barra lateral, com seleção do servidor ativo.
+- Listagem de canais (texto/voz) do servidor selecionado, usando `FlatList`.
+- Navegação para o chat de um canal com passagem de parâmetros (`id` e `name` do canal).
+- Chat com histórico de mensagens mockado por canal e envio de novas mensagens (mantidas apenas em estado local, sem persistência).
+- Gesto de deslizar (swipe) na tela inicial para abrir o canal selecionado.
+- Formulário de criação de servidor com campos controlados por `useState` e validação simples (nome obrigatório).
+- Navegação de ida e volta entre todas as telas (`router.back()`).
+
+## 6. Dados mockados
+
+Todos os dados estão em `src/mock/discordData.ts`:
+
+- `MOCK_SERVERS`: lista de servidores, cada um com `id`, `name`, `iconUrl` e sua lista de `channels` (`IServer` / `IChannel`, definidos em `src/@types/discord.tsx`).
+- `MOCK_MESSAGES`: mensagens mockadas por canal, indexadas pelo `id` do canal (`IMessage`).
+
+Nenhum dado é escrito diretamente no JSX das telas — tudo vem dessas estruturas tipadas.
+
+## 7. Componentização
+
+| Componente | Local | Reutilizado em |
+| --- | --- | --- |
+| `SideBar` | `src/components/SideBar.tsx` | Tela de Servidores e Canais |
+| `Server` | `src/components/Server.tsx` | Renderiza cada ícone de servidor dentro da `SideBar` |
+| `ChannelList` | `src/components/ChannelList.tsx` | Tela de Servidores e Canais |
+| `Channel` | `src/components/Channel.tsx` | Cada item de canal dentro da `ChannelList` (recebe `channel`, `isSelected` e `onPress` via props) |
+
+Os tipos dos dados (`IServer`, `IChannel`, `IMessage`) e das *props* de cada componente estão definidos em TypeScript, sem uso de `any`.
+
+## 8. Tecnologias
+
+- React Native + Expo
+- TypeScript
+- Expo Router (navegação em pilha + tabs)
+- React Native Reanimated / Gesture Handler (gesto de swipe)
+
+## 9. Fora do escopo
+
+Conforme o enunciado, não foram implementados: backend, banco de dados, autenticação real, integração com APIs externas, pagamentos, persistência remota ou publicação em lojas.
