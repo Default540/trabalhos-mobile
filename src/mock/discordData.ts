@@ -1,6 +1,6 @@
-import { Server, Message } from '../@types/discord';
+import { IServer, IMessage } from '../@types/discord';
 
-export const MOCK_SERVERS: Server[] = [
+export const MOCK_SERVERS: IServer[] = [
     {
         id: '1',
         name: 'Devs React Native',
@@ -44,7 +44,7 @@ export const MOCK_SERVERS: Server[] = [
     },
 ];
 
-export const MOCK_MESSAGES: Record<string, Message[]> = {
+export const MOCK_MESSAGES: Record<string, IMessage[]> = {
     c1: [
         {
             id: 'm1',

@@ -7,6 +7,7 @@ import {
     FlatList,
     StyleSheet,
     Text,
+    GestureResponderHandlers
 } from 'react-native';
 
 interface ChannelListProps {
@@ -14,7 +15,7 @@ interface ChannelListProps {
     selectedChannelId: string | null;
     setSelectedChannelId: (id: string) => void;
     translateX: Animated.Value;
-    panHandlers: any;
+    panHandlers: GestureResponderHandlers;
 }
 
 export default function ChannelList({
@@ -25,8 +26,6 @@ export default function ChannelList({
     panHandlers,
 }: ChannelListProps) {
     const router = useRouter();
-    const selectedChannel = selectedServer.channels.find((c) => c.id === selectedChannelId);
-
     return (
         <Animated.View
             style={[styles.channelContainer, { transform: [{ translateX }] }]}

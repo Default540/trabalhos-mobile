@@ -1,14 +1,16 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
+
 import {
     Image,
     StyleSheet,
     Text,
     TouchableOpacity,
 } from 'react-native';
+import { IServer } from '../@types/discord';
 
 interface ServerProps {
-    servers: any[];
+    servers: IServer[];
     selectedServerId: string;
     onSelectServer: (serverId: string) => void;
 }
