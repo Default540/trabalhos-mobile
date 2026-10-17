@@ -166,4 +166,4 @@ Depois do teste voltei `reactCompiler` para `true` e removi os `console.log`.
 
 ## Vídeo
 
-**[PREENCHER: link do vídeo (até 10 minutos), com acesso liberado ao professor.]**
+[Vídeo no Google Drive](https://drive.google.com/file/d/1HMDX0CD82LO_KZVajD8cAxNcggO_vCe7/view?usp=drive_link)
