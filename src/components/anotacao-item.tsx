@@ -2,21 +2,18 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { Colors, Spacing } from '@/constants/theme';
 import type { Anotacao } from '@/models/usuario';
+import { formatarDataHora } from '@/utils/formatar-data';
 
 interface AnotacaoItemProps {
   anotacao: Anotacao;
 }
 
 export function AnotacaoItem({ anotacao }: AnotacaoItemProps) {
-  const data = new Date(anotacao.criadaEm);
 
   return (
     <View style={styles.item}>
       <Text style={styles.texto}>{anotacao.texto}</Text>
-      <Text style={styles.meta}>
-        {data.toLocaleDateString('pt-BR')} às{' '}
-        {data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-      </Text>
+      <Text style={styles.meta}>{formatarDataHora(anotacao.criadaEm)}</Text>
     </View>
   );
 }

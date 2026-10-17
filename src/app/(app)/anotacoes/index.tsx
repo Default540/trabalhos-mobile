@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
 import { AnotacaoItem } from '@/components/anotacao-item';
 import { Campo } from '@/components/campo';
@@ -12,6 +12,7 @@ import { Colors, Spacing } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
 import type { Anotacao } from '@/models/usuario';
 import { api } from '@/services/api';
+import { Link } from 'expo-router';
 
 // ANOTAÇÕES — src/app/(app)/anotacoes.tsx  ->  rota "/anotacoes"
 //
@@ -53,7 +54,6 @@ export default function AnotacoesScreen() {
     setSalvando(true);
     try {
       const nova = await api.criarAnotacao(token, texto);
-      // Imutabilidade (Aula 4): uma lista nova, com a anotação na frente.
       setAnotacoes((atuais) => [nova, ...atuais]);
       setTexto('');
     } catch (e) {
@@ -69,7 +69,13 @@ export default function AnotacoesScreen() {
       contentContainerStyle={styles.conteudo}
       data={anotacoes}
       keyExtractor={(anotacao) => anotacao.id}
-      renderItem={({ item }) => <AnotacaoItem anotacao={item} />}
+      renderItem={({ item }) => (
+        <Link href={{ pathname: '/anotacoes/[id]', params: { id: item.id } }} asChild>
+          <Pressable>
+            <AnotacaoItem anotacao={item} />
+          </Pressable>
+        </Link>
+      )}
       ItemSeparatorComponent={() => <View style={styles.separador} />}
       keyboardShouldPersistTaps="handled"
       ListHeaderComponent={

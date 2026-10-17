@@ -1,6 +1,6 @@
 // Tipos dos dados que o servidor devolve (ver server/index.js).
 
-export type Papel = 'admin' | 'usuario';
+export type Papel = 'admin' | 'usuario' | 'moderador';
 
 export interface Usuario {
   id: string;
@@ -8,6 +8,14 @@ export interface Usuario {
   email: string;
   papel: Papel;
   criadoEm: string;
+}
+
+export function podeModerar(papel: Papel): boolean {
+  return papel === 'moderador' || papel === 'admin';
+}
+
+export interface AnotacaoModeracao extends Anotacao {
+  autor: string;
 }
 
 // O que o servidor devolve no login e no cadastro: o token que identifica a

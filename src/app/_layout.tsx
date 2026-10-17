@@ -2,6 +2,8 @@ import { Stack } from 'expo-router';
 
 import { Colors } from '@/constants/theme';
 import { AuthProvider, useAuth } from '@/contexts/auth-context';
+import { TelaDeEspera } from '@/components/tela-de-espera';
+import { StyleSheet, View } from 'react-native';
 
 // LAYOUT RAIZ — src/app/_layout.tsx
 //
@@ -25,34 +27,46 @@ export default function RootLayout() {
 }
 
 function RotasDoApp() {
-  const { usuario } = useAuth();
+  const { usuario, restaurando, carregando } = useAuth();
   const logado = usuario !== null;
 
+  if (restaurando) return <TelaDeEspera mensagem="Restaurando sua sessão…" />;
+
   return (
-    <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: Colors.background },
-        headerTintColor: Colors.text,
-        contentStyle: { backgroundColor: Colors.background },
-      }}>
-      {/* <Stack.Protected> com guard=false REMOVE as rotas filhas do
-          navegador: não dá para chegar nelas nem por link, nem por
-          router.push. E se o usuário estiver em uma delas quando o guard
-          virar false, o Expo Router o leva sozinho para a primeira rota
-          disponível. É isso que faz o login e o logout "navegarem" sem
-          nenhum router.replace() nas telas. */}
+    <View style={{ flex: 1 }}>
+      <Stack
+          screenOptions={{
+            headerStyle: { backgroundColor: Colors.background },
+            headerTintColor: Colors.text,
+            contentStyle: { backgroundColor: Colors.background },
+          }}>
+          {/* <Stack.Protected> com guard=false REMOVE as rotas filhas do
+              navegador: não dá para chegar nelas nem por link, nem por
+              router.push. E se o usuário estiver em uma delas quando o guard
+              virar false, o Expo Router o leva sozinho para a primeira rota
+              disponível. É isso que faz o login e o logout "navegarem" sem
+              nenhum router.replace() nas telas. */}
 
-      {/* Só existe enquanto NÃO há usuário: login e cadastro. */}
-      <Stack.Protected guard={!logado}>
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      </Stack.Protected>
+          {/* Só existe enquanto NÃO há usuário: login e cadastro. */}
+          <Stack.Protected guard={!logado}>
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          </Stack.Protected>
 
-      {/* Só existe COM usuário: o app em si. */}
-      <Stack.Protected guard={logado}>
-        <Stack.Screen name="(app)" options={{ headerShown: false }} />
-      </Stack.Protected>
+          {/* Só existe COM usuário: o app em si. */}
+          <Stack.Protected guard={logado}>
+            <Stack.Screen name="(app)" options={{ headerShown: false }} />
+          </Stack.Protected>
 
-      <Stack.Screen name="+not-found" options={{ title: 'Rota não encontrada' }} />
-    </Stack>
+          <Stack.Screen name="+not-found" options={{ title: 'Rota não encontrada' }} />
+        </Stack>
+          
+      {carregando ? (
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: Colors.background }]}>
+          <TelaDeEspera mensagem="Aguarde…" />
+        </View>
+      ) : null}
+
+    </View>
   );
+
 }

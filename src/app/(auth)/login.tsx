@@ -12,29 +12,31 @@ import { Colors, Spacing } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
 import { API_URL } from '@/services/api';
 
+
+const CONTAS_DE_TESTE = [
+  { rotulo: 'Ana (usuária)', email: 'ana@ifrs.edu.br', senha: '123456' },
+  { rotulo: 'Administrador', email: 'admin@ifrs.edu.br', senha: 'admin123' },
+  { rotulo: 'Moderador', email: 'moderador@ifrs.edu.br', senha: 'mod123' },
+  { rotulo: 'João (usuário)', email: 'joao@ifrs.edu.br', senha: '13680' },
+];
+
+
 // TELA DE LOGIN — src/app/(auth)/login.tsx  ->  rota "/login"
 //
 // A tela não guarda o usuário: ela só pede ao contexto para entrar. O que
 // é dela é o estado do FORMULÁRIO — campos, erro e "enviando".
 export default function LoginScreen() {
-  const { entrar } = useAuth();
-
+  const { entrar, carregando, sessaoExpirada } = useAuth();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState<string | null>(null);
-  const [enviando, setEnviando] = useState(false);
 
   async function handleEntrar() {
     setErro(null);
-    setEnviando(true);
     try {
       await entrar(email, senha);
-      // Deu certo: o AuthProvider mudou `usuario`, o layout raiz reagiu e
-      // esta tela já não existe mais. Não há router.replace('/') aqui.
     } catch (e) {
       setErro(e instanceof Error ? e.message : 'Não foi possível entrar.');
-    } finally {
-      setEnviando(false);
     }
   }
 
@@ -71,30 +73,22 @@ export default function LoginScreen() {
           secureTextEntry
           onSubmitEditing={handleEntrar}
         />
-
+        <MensagemErro>{sessaoExpirada ? 'Sua sessão expirou. Entre novamente.' : null}</MensagemErro>
         <MensagemErro>{erro}</MensagemErro>
-
-        <PrimaryButton
-          label={enviando ? 'Entrando…' : 'Entrar'}
-          onPress={handleEntrar}
-          disabled={enviando || !email || !senha}
-        />
+        <PrimaryButton label="Entrar" onPress={handleEntrar} disabled={carregando || !email || !senha} />
       </View>
 
-      <View style={styles.grupo}>
-        <Text style={styles.rotulo}>Contas de teste</Text>
-        <View style={styles.atalhos}>
-          <PrimaryButton
-            label="Ana (usuária)"
-            variant="secondary"
-            onPress={() => usarConta('ana@ifrs.edu.br', '123456')}
-          />
-          <PrimaryButton
-            label="Administrador"
-            variant="secondary"
-            onPress={() => usarConta('admin@ifrs.edu.br', 'admin123')}
-          />
-        </View>
+      <Text style={styles.rotulo}>Contas de teste</Text>
+      <View style={styles.atalhos}>
+        {CONTAS_DE_TESTE.map((conta) => (
+          <View key={conta.email} style={styles.atalho}>
+            <PrimaryButton
+              label={conta.rotulo}
+              variant="secondary"
+              onPress={() => usarConta(conta.email, conta.senha)}
+            />
+          </View>
+        ))}
       </View>
 
       <Link href="/cadastro" style={styles.link}>
@@ -135,7 +129,12 @@ const styles = StyleSheet.create({
   },
   atalhos: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: Spacing.sm,
+  },
+  atalho: {
+    flexBasis: '48%',
+    flexGrow: 1,
   },
   link: {
     fontSize: 16,

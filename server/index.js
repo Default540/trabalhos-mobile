@@ -12,6 +12,8 @@
 //   POST /auth/logout     (token)                 -> 204
 //   GET  /anotacoes       (token)                 -> 200 [anotacao]
 //   POST /anotacoes       (token) { texto }       -> 201 anotacao
+//   GET  /anotacoes/:id   (token)                 -> 200 anotacao | 404
+//   GET  /moderacao/anotacoes (moderador/admin)   -> 200 [anotacao + autor]
 //   GET  /usuarios        (token de admin)        -> 200 [usuario]
 //
 // "(token)" = a requisição precisa do cabeçalho  Authorization: Bearer <token>
@@ -64,11 +66,13 @@ function autenticado(req, res, next) {
 
 // 403 (proibido) é diferente de 401: o servidor sabe quem é, mas essa
 // pessoa não pode fazer isso.
-function somenteAdmin(req, res, next) {
-  if (req.usuario.papel !== 'admin') {
-    return res.status(403).json({ mensagem: 'Somente administradores podem acessar isto.' });
-  }
-  next();
+function somentePapel(...papeis) {
+  return (req, res, next) => {
+    if (!papeis.includes(req.usuario.papel)) {
+      return res.status(403).json({ mensagem: `Somente ${papeis.join(' ou ')}s podem acessar isto.` });
+    }
+    next();
+  };
 }
 
 // ------------------------------------------------------------------ rotas
@@ -84,6 +88,8 @@ app.get('/', (req, res) => {
       'POST /auth/logout',
       'GET  /anotacoes',
       'POST /anotacoes',
+      'GET  /anotacoes/:id',
+      'GET  /moderacao/anotacoes (moderador ou admin)',
       'GET  /usuarios (admin)',
     ],
   });
@@ -154,7 +160,19 @@ app.post('/anotacoes', autenticado, (req, res) => {
   res.status(201).json(banco.criarAnotacao(req.usuario.id, texto));
 });
 
-app.get('/usuarios', autenticado, somenteAdmin, (req, res) => {
+app.get('/anotacoes/:id', autenticado, (req, res) => {
+  const anotacao = banco.buscarAnotacao(req.params.id);
+  if (!anotacao || anotacao.usuarioId !== req.usuario.id) {
+    return res.status(404).json({ mensagem: 'Anotação não encontrada.' });
+  }
+  res.json(anotacao);
+});
+
+app.get('/moderacao/anotacoes', autenticado, somentePapel('moderador', 'admin'), (req, res) => {
+  res.json(banco.listarTodasAnotacoes());
+});
+
+app.get('/usuarios', autenticado, somentePapel('admin'), (req, res) => {
   res.json(banco.listarUsuarios());
 });
 

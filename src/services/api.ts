@@ -1,6 +1,6 @@
 import Constants from 'expo-constants';
 
-import type { Anotacao, Sessao, Usuario, UsuarioResumo } from '@/models/usuario';
+import type { Anotacao, AnotacaoModeracao, Sessao, Usuario, UsuarioResumo } from '@/models/usuario';
 
 // SERVIÇO DE API — src/services/api.ts
 //
@@ -34,15 +34,26 @@ export class ApiError extends Error {
   }
 }
 
+let aoExpirar: (() => void) | null = null;
+  export function definirAoExpirar(fn: (() => void) | null) {
+    aoExpirar = fn;
+}
+
+
 interface Opcoes {
   metodo?: 'GET' | 'POST';
   corpo?: unknown;
+  
   // Quando existe, vai no cabeçalho Authorization. É assim que o servidor
   // descobre quem está pedindo.
   token?: string | null;
+  tratar401?: boolean; // se false, não chama aoExpirar() quando der 401
 }
 
-async function requisicao<T>(caminho: string, { metodo = 'GET', corpo, token }: Opcoes = {}) {
+async function requisicao<T>(
+  caminho: string,
+  { metodo = 'GET', corpo, token, tratar401 = true }: Opcoes = {},
+) {
   let resposta: Response;
 
   try {
@@ -66,6 +77,12 @@ async function requisicao<T>(caminho: string, { metodo = 'GET', corpo, token }: 
 
   // 4xx e 5xx NÃO rejeitam o fetch: quem decide que é erro somos nós.
   if (!resposta.ok) {
+    // Só é "sessão expirada" se a requisição ENVIOU token e o chamador não
+    // pediu para tratar o 401 por conta própria (logout e restauração).
+    // Sem a checagem do token, senha errada no login (também 401) deslogaria.
+    if (resposta.status === 401 && token && tratar401) {
+      aoExpirar?.();
+    }
     throw new ApiError(resposta.status, dados?.mensagem ?? `Erro ${resposta.status}`);
   }
 
@@ -79,11 +96,19 @@ export const api = {
   cadastrar: (nome: string, email: string, senha: string) =>
     requisicao<Sessao>('/auth/cadastro', { metodo: 'POST', corpo: { nome, email, senha } }),
 
-  sair: (token: string) => requisicao<void>('/auth/logout', { metodo: 'POST', token }),
+  sair: (token: string) => requisicao<void>('/auth/logout', { metodo: 'POST', token, tratar401: false }),
 
   perfil: (token: string | null) => requisicao<Usuario>('/auth/me', { token }),
 
   listarAnotacoes: (token: string | null) => requisicao<Anotacao[]>('/anotacoes', { token }),
+
+  obterAnotacao: (token: string | null, id: string) =>
+    requisicao<Anotacao>(`/anotacoes/${encodeURIComponent(id)}`, { token }),
+
+  listarAnotacoesModeracao: (token: string | null) =>
+    requisicao<AnotacaoModeracao[]>('/moderacao/anotacoes', { token }),
+
+  restaurar: (token: string) => requisicao<Usuario>('/auth/me', { token, tratar401: false }),
 
   criarAnotacao: (token: string | null, texto: string) =>
     requisicao<Anotacao>('/anotacoes', { metodo: 'POST', corpo: { texto }, token }),

@@ -15,25 +15,19 @@ import { useAuth } from '@/contexts/auth-context';
 // O servidor já devolve a sessão no cadastro, então `cadastrar` também
 // deixa o usuário logado — e o layout raiz troca de grupo do mesmo jeito.
 export default function CadastroScreen() {
-  const { cadastrar } = useAuth();
+  const { cadastrar, carregando } = useAuth();
 
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState<string | null>(null);
-  const [enviando, setEnviando] = useState(false);
 
   async function handleCadastrar() {
     setErro(null);
-    setEnviando(true);
     try {
       await cadastrar(nome, email, senha);
     } catch (e) {
-      // As regras (e-mail válido, senha mínima, e-mail repetido) estão no
-      // servidor; a tela só mostra a mensagem que ele mandou.
       setErro(e instanceof Error ? e.message : 'Não foi possível cadastrar.');
-    } finally {
-      setEnviando(false);
     }
   }
 
@@ -74,9 +68,9 @@ export default function CadastroScreen() {
         <MensagemErro>{erro}</MensagemErro>
 
         <PrimaryButton
-          label={enviando ? 'Criando conta…' : 'Criar conta e entrar'}
+          label={carregando ? 'Criando conta…' : 'Criar conta e entrar'}
           onPress={handleCadastrar}
-          disabled={enviando || !nome || !email || !senha}
+          disabled={carregando || !nome || !email || !senha}
         />
       </View>
 

@@ -1,7 +1,8 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
 import type { Sessao, Usuario } from '@/models/usuario';
-import { api } from '@/services/api';
+import { api, ApiError, definirAoExpirar } from '@/services/api';
+import { apagarToken, lerToken, salvarToken } from '@/services/sessao-storage';
 
 // CONTEXTO DE AUTENTICAÇÃO — src/contexts/auth-context.tsx
 //
@@ -29,6 +30,9 @@ interface AuthContextValue {
   usuario: Usuario | null;
   // O token vai no cabeçalho de toda requisição autenticada.
   token: string | null;
+  carregando: boolean;      // login/cadastro em andamento
+  restaurando: boolean;     // lendo a sessão salva na abertura
+  sessaoExpirada: boolean;
   entrar: (email: string, senha: string) => Promise<void>;
   cadastrar: (nome: string, email: string, senha: string) => Promise<void>;
   sair: () => Promise<void>;
@@ -44,28 +48,63 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   // Token e usuário mudam sempre juntos, então vivem em um único estado.
   const [sessao, setSessao] = useState<Sessao | null>(null);
+  
+  const [carregando, setCarregando] = useState(false);
+  const [restaurando, setRestaurando] = useState(true);
+  const [sessaoExpirada, setSessaoExpirada] = useState(false);
 
-  async function entrar(email: string, senha: string) {
-    // Se o servidor recusar, api.login lança um erro — e ele sobe até a tela
-    // de login, que é quem sabe mostrar a mensagem. O provider não trata.
-    const novaSessao = await api.login(email, senha);
-    setSessao(novaSessao);
-    // Repare: NENHUMA navegação aqui. Mudar o estado basta — o layout raiz
-    // lê `usuario` e troca as rotas disponíveis sozinho.
-  }
 
-  async function cadastrar(nome: string, email: string, senha: string) {
-    // O servidor já devolve a sessão no cadastro: quem se cadastra entra.
-    const novaSessao = await api.cadastrar(nome, email, senha);
-    setSessao(novaSessao);
+  useEffect(() => {
+    let ativo = true;
+    async function restaurar() {
+      try {
+        const salvo = await lerToken();
+        if (!salvo) return;
+        const usuario = await api.restaurar(salvo);
+        if (ativo) setSessao({ token: salvo, usuario });
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 401) await apagarToken();
+        // status 0 (servidor fora do ar): mantém o token salvo e mostra o login
+      } finally {
+        if (ativo) setRestaurando(false);
+      }
+    }
+    restaurar();
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    definirAoExpirar(() => {
+      setSessao(null);
+      setSessaoExpirada(true);
+      apagarToken();
+    });
+    return () => definirAoExpirar(null);
+  }, []);
+
+  async function iniciarSessao(obter: () => Promise<Sessao>) {
+    setCarregando(true);
+    try {
+      const nova = await obter();
+      await salvarToken(nova.token);
+      setSessaoExpirada(false);
+      setSessao(nova);
+    } finally {
+      setCarregando(false);
+    }
   }
+  
+  const entrar = (email: string, senha: string) => iniciarSessao(() => api.login(email, senha));
+
+  const cadastrar = (nome: string, email: string, senha: string) =>
+    iniciarSessao(() => api.cadastrar(nome, email, senha));
 
   async function sair() {
-    // Avisa o servidor para invalidar o token, mas o logout local acontece
-    // de qualquer jeito — mesmo com o servidor fora do ar.
-    if (sessao) {
-      await api.sair(sessao.token).catch(() => {});
-    }
+    if (sessao) await api.sair(sessao.token).catch(() => { });
+    await apagarToken();
+    setSessaoExpirada(false);
     setSessao(null);
   }
 
@@ -79,6 +118,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         entrar,
         cadastrar,
         sair,
+        carregando,
+        restaurando,
+        sessaoExpirada,
       }}>
       {children}
     </AuthContext>

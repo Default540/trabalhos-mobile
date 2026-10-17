@@ -119,19 +119,38 @@ export function criarAnotacao(usuarioId, texto) {
   return anotacao;
 }
 
+export function buscarAnotacao(id) {
+  return anotacoes.get(id) ?? null;
+}
+
+export function listarTodasAnotacoes() {
+  return [...anotacoes.values()]
+    .map((a) => ({
+      id: a.id,
+      texto: a.texto,
+      criadaEm: a.criadaEm,
+      autor: usuarios.get(a.usuarioId)?.nome ?? 'Desconhecido',
+    }))
+    .sort((a, b) => b.criadaEm.localeCompare(a.criadaEm));
+}
+
 // ------------------------------------------------------- dados iniciais
 
-// Duas contas prontas para a aula. A senha está aqui em texto só porque é
-// um dado de exemplo — o Map guarda apenas o hash.
+// Contas prontas para a aula e para os testes do trabalho: admin, moderador
+// e usuárias comuns. A senha está aqui em texto só porque é um dado de
+// exemplo — o Map guarda apenas o hash.
+
 export const CONTAS_DE_TESTE = [
   { nome: 'Administrador', email: 'admin@ifrs.edu.br', senha: 'admin123', papel: 'admin' },
   { nome: 'Ana', email: 'ana@ifrs.edu.br', senha: '123456', papel: 'usuario' },
+  { nome: 'João', email: 'joao@ifrs.edu.br', senha: '13680', papel: 'usuario' },
+  { nome: 'Carlos', email: 'moderador@ifrs.edu.br', senha: 'mod123', papel: 'moderador' },
 ];
 
 for (const conta of CONTAS_DE_TESTE) {
   const usuario = criarUsuario(conta);
   if (conta.papel === 'usuario') {
-    criarAnotacao(usuario.id, 'Revisar o material da Aula 5 (navegação).');
-    criarAnotacao(usuario.id, 'Trazer o carregador para a aula de quinta.');
+    criarAnotacao(usuario.id, `Revisar o material da Aula 5 (navegação). ${conta.nome}`);
+    criarAnotacao(usuario.id, `Trazer o carregador para a aula de quinta. ${conta.nome}`);
   }
 }

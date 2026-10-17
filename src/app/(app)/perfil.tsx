@@ -3,7 +3,6 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Header } from '@/components/header';
 import { MensagemErro } from '@/components/mensagem-erro';
-import { Note } from '@/components/note';
 import { PrimaryButton } from '@/components/primary-button';
 import { SessaoAtual } from '@/components/sessao-atual';
 import { Colors, Spacing } from '@/constants/theme';
@@ -62,12 +61,6 @@ export default function PerfilScreen() {
         {confirmacao ? <Text style={styles.confirmacao}>{confirmacao}</Text> : null}
         <MensagemErro>{erro}</MensagemErro>
       </View>
-
-      <Note>
-        A sessão vive só na memória do app: recarregue-o e você volta ao login.
-        Guardar o token no aparelho (AsyncStorage) é assunto da aula de
-        persistência.
-      </Note>
 
       <PrimaryButton label={saindo ? 'Saindo…' : 'Sair'} onPress={handleSair} disabled={saindo} />
 

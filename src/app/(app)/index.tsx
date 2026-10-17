@@ -8,6 +8,7 @@ import { PrimaryButton } from '@/components/primary-button';
 import { SessaoAtual } from '@/components/sessao-atual';
 import { Colors, Spacing } from '@/constants/theme';
 import { useAuth } from '@/contexts/auth-context';
+import { podeModerar } from '@/models/usuario';
 
 // TELA INICIAL — src/app/(app)/index.tsx  ->  rota "/"
 //
@@ -56,6 +57,10 @@ export default function InicioScreen() {
           />
         ) : null}
       </View>
+      {podeModerar(usuario.papel) ? (
+        <MenuLink href="/moderacao" emoji="🔎" title="Moderação"
+          description="Anotações de todos os usuários. Só moderador e admin." />
+      ) : null}
 
       {!admin ? (
         <View style={styles.grupo}>
